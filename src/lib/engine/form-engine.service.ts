@@ -16,6 +16,12 @@ import {
   FormFieldMetadataState,
 } from '../models/form-state.model';
 import { DependencyGraphSorter, GraphNodeDefinition } from './dependency-graph';
+import {
+  RecursiveFormSchemaDefinition,
+  FormulaEvaluatorDelegate,
+  FormulaDependencyExtractorDelegate,
+} from '../models/recursive-schema.model';
+import { SchemaFlattenerService } from './schema-flattener.service';
 
 @Injectable({
   providedIn: 'root',
@@ -45,6 +51,25 @@ export class FormEngineService {
   public readonly metadataStateSignal: Signal<FormMetadataState> = computed(
     (): FormMetadataState => this.formStateSnapshotSignal().metadata
   );
+
+  /**
+   * Flattens a recursive tree schema definition and initializes the form engine.
+   * Connects formula objects to the provided evaluator delegate and extracts dependencies.
+   */
+  public initializeFromRecursiveSchema(
+    recursiveSchemaDefinition: RecursiveFormSchemaDefinition,
+    evaluatorDelegate: FormulaEvaluatorDelegate,
+    extractorDelegate?: FormulaDependencyExtractorDelegate,
+    initialValues: Record<string, unknown> = {}
+  ): void {
+    const flattenerService: SchemaFlattenerService = new SchemaFlattenerService();
+    const flattenedSchemaDefinition: FormSchemaDefinition = flattenerService.flattenSchema(
+      recursiveSchemaDefinition,
+      evaluatorDelegate,
+      extractorDelegate
+    );
+    this.initializeForm(flattenedSchemaDefinition, initialValues);
+  }
 
   /**
    * Initializes the form engine with a schema definition and optional initial values.
